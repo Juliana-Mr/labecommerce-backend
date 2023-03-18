@@ -1,0 +1,23 @@
+{
+  "name": "labecommerce-backend",
+  "version": "1.0.0",
+  "description": "exercícios de node e packge.json",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "clear && node ./index.js",
+    "par-ou-impar":"node ./par-ou-impar.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Juliana-Mr/labecommerce-backend.git"
+  },
+  "keywords": [],
+  "author": "juliana",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Juliana-Mr/labecommerce-backend/issues"
+  },
+  "homepage": "https://github.com/Juliana-Mr/labecommerce-backend#readme"
+}
