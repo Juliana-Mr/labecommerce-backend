@@ -1,32 +1,32 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllPurchasesFromUserId = exports.createPurchase = exports.queryProductsByName = exports.purchase = exports.getProductById = exports.getAllProduct = exports.createProduct = exports.product = exports.getAllUsers = exports.createUser = exports.user = void 0;
+exports.getAllPurchasesFromUserId = exports.createPurchase = exports.queryProductsByName = exports.purchase = exports.getProductById = exports.getAllProduct = exports.createProduct = exports.products = exports.getAllUsers = exports.createUser = exports.users = void 0;
 const types_1 = require("./types");
-exports.user = [
+exports.users = [
     {
         id: "1",
         email: "fulano@email.com",
-        password: "senha"
+        password: "senha1"
     },
     {
         id: "2",
         email: "ciclano@email.com",
-        password: "senha1"
+        password: "senha2"
     }
 ];
 const createUser = (id, email, password) => {
     const newUser = { id, email, password };
-    exports.user.push(newUser);
-    console.log(exports.user);
+    exports.users.push(newUser);
+    console.log(exports.users);
 };
 exports.createUser = createUser;
-(0, exports.createUser)("3", "beltrano@email.com", "senha");
+(0, exports.createUser)("3", "beltrano@email.com", "senha3");
 const getAllUsers = () => {
-    console.log(exports.user);
+    console.log(exports.users);
 };
 exports.getAllUsers = getAllUsers;
 (0, exports.getAllUsers)();
-exports.product = [
+exports.products = [
     {
         id: "1",
         name: "VanGogh",
@@ -42,18 +42,18 @@ exports.product = [
 ];
 const createProduct = (id, name, price, category) => {
     const newProduct = { id, name, price, category };
-    exports.product.push(newProduct);
-    console.log(`Produto criado com sucesso ${exports.product}`);
+    exports.products.push(newProduct);
+    console.log(`Produto criado com sucesso ${exports.products}`);
 };
 exports.createProduct = createProduct;
 (0, exports.createProduct)("3", "Tarsila", 500, types_1.CATEGORY.QUADROS);
 const getAllProduct = () => {
-    console.log(exports.product);
+    console.log(exports.products);
 };
 exports.getAllProduct = getAllProduct;
 (0, exports.getAllProduct)();
 const getProductById = (id) => {
-    const idProduct = exports.product.find((idProduct) => {
+    const idProduct = exports.products.find((idProduct) => {
         if (idProduct.id === id) {
             return console.log(idProduct);
         }
@@ -76,7 +76,7 @@ exports.purchase = [
     }
 ];
 const queryProductsByName = (q) => {
-    return exports.product.filter(prod => prod.name.toLowerCase() === q.toLowerCase());
+    return exports.products.filter(prod => prod.name.toLowerCase() === q.toLowerCase());
 };
 exports.queryProductsByName = queryProductsByName;
 const createPurchase = (userId, productId, quantity, totalPrice) => {
