@@ -1,37 +1,37 @@
 import { TProduct, TPurchase, TUser, CATEGORY } from "./types";
 
-export const user: TUser[] = [
+export const users: TUser[] = [
     {
         id: "1",
         email:"fulano@email.com",
-        password: "senha"
+        password: "senha1"
     },
     {
         id: "2",
         email:"ciclano@email.com",
-        password:"senha1"
+        password:"senha2"
     }
 ]
 
 export const createUser = (id: string, email: string, password:string)=> {
     const newUser = {id, email,password}
-    user.push(newUser)
-    console.log(user)
+    users.push(newUser)
+    console.log(users)
     
 }
 
-createUser("3", "beltrano@email.com", "senha")
+createUser("3", "beltrano@email.com", "senha3")
 
 
 export const getAllUsers = () => {
-    console.log(user)
+    console.log(users)
 }
 
 getAllUsers()
 
 
 
-export const product: TProduct[] = [
+export const products: TProduct[] = [
     {
         id:"1",
         name:"VanGogh",
@@ -48,20 +48,20 @@ export const product: TProduct[] = [
 
 export const createProduct = (id: string, name: string, price:number, category:CATEGORY) => {
     const newProduct = {id, name, price, category}
-    product.push(newProduct)
-    console.log(`Produto criado com sucesso ${product}`)
+    products.push(newProduct)
+    console.log(`Produto criado com sucesso ${products}`)
 }
 
 createProduct("3", "Tarsila", 500, CATEGORY.QUADROS)
 
 export const getAllProduct = () => {
-    console.log(product)
+    console.log(products)
 }
 
 getAllProduct()
 
 export const getProductById = (id:string) => {
-    const idProduct = product.find((idProduct)=>{
+    const idProduct = products.find((idProduct)=>{
         if (idProduct.id === id) {
             return console.log (idProduct)
         }
@@ -87,7 +87,7 @@ export const purchase: TPurchase[] = [
 ]
 
 export const queryProductsByName = (q:string): TProduct[] => {
-    return product.filter(prod => prod.name.toLowerCase() === q.toLowerCase()) 
+    return products.filter(prod => prod.name.toLowerCase() === q.toLowerCase()) 
 }
 
 
