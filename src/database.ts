@@ -47,8 +47,14 @@ export const products: TProduct[] = [
     {
         id:"3",
         name:"DaVinci",
-        price:300,
-        category: CATEGORY.QUADROS
+        price:100,
+        category: CATEGORY.PORTACOPOS
+    },
+    {
+        id:"4",
+        name:"Frida",
+        price:150,
+        category: CATEGORY.LAMBE
     }
 ]
 
@@ -58,7 +64,7 @@ export const createProduct = (id: string, name: string, price:number, category:C
     console.log(`Produto criado com sucesso ${products}`)
 }
 
-createProduct("4", "Tarsila", 500, CATEGORY.QUADROS)
+createProduct("5", "Tarsila", 500, CATEGORY.QUADROS)
 
 export const getAllProduct = () => {
     console.log(products)
@@ -88,7 +94,7 @@ export const purchase: TPurchase[] = [
         userId:"2",
         productId:"3",
         quantity: 6,
-        totalPrice: 1800
+        totalPrice: 600
     }
 ]
 
