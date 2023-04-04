@@ -23,6 +23,7 @@ export const createUser = (id: string, email: string, password:string)=> {
 createUser("3", "beltrano@email.com", "senha3")
 
 
+
 export const getAllUsers = () => {
     console.log(users)
 }
