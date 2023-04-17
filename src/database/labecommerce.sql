@@ -1,3 +1,4 @@
+-- Active: 1680179671263@@127.0.0.1@3306
 
 CREATE TABLE users(
      id TEXT PRIMARY KEY NOT NULL UNIQUE ,
@@ -71,3 +72,34 @@ WHERE id = 4;
  SELECT * FROM products
  WHERE price >= 200 AND price <= 500
  ORDER BY name ASC;
+
+
+CREATE TABLE purchases (
+    id TEXT PRIMARY KEY UNIQUE NOT NULL,
+    total_price REAL NOT NULL,
+    paid INTEGER NOT NULL,
+    created_at TEXT,
+    buyer_id TEXT NOT NULL,
+    FOREIGN KEY (buyer_id) REFERENCES users (id)
+    );
+
+INSERT INTO purchases (id, total_price, paid, created_at,buyer_id)
+VALUES
+("1", "900", "0", "null", "1"),
+("2", "1600", "0", "null", "1"),
+("3", "600", "0", "null", "2"),
+("4", "300", "0", "null", "2"),
+("5", "150", "0", "null", "3"),
+("6", "300", "0", "null", "3");
+
+UPDATE purchases
+SET created_at = DATETIME('now','localtime');
+
+SELECT * FROM users
+INNER JOIN purchases
+ON users.id = purchases.buyer_id;
+
+SELECT * FROM users
+INNER JOIN purchases
+ON users.id = purchases.buyer_id
+WHERE users.id = 2;
