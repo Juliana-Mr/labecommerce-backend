@@ -103,3 +103,41 @@ SELECT * FROM users
 INNER JOIN purchases
 ON users.id = purchases.buyer_id
 WHERE users.id = 2;
+
+CREATE TABLE purchases_products(
+    purchase_id TEXT NOT NULL,
+    product_id TEXT NOT NULL,
+    quantity INTEGER NOT NULL,
+    FOREIGN KEY (purchase_id) REFERENCES purchases(id),
+    FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
+SELECT * FROM purchases_products;
+
+INSERT INTO purchases_products (purchase_id, product_id, quantity)
+VALUES
+("1", "4","3"),
+("2", "5", "5"),
+("3", "6","6");
+
+SELECT * FROM purchases_products;
+
+SELECT 
+purchases_products.purchase_id AS purchaseID,
+purchases_products.product_id AS productId,
+purchases_products.quantity AS quantity,
+products.id AS idProduct, 
+products.name AS productName,
+products.price AS productPrice,
+products.category AS productCategory,
+purchases.id AS idPurchase,
+purchases.total_price AS purchasePrice,
+purchases.paid AS pruchasePaid,
+purchases.created_at AS purchaseCreatedAt,
+purchases.buyer_id AS purchaseBuyer
+
+FROM products
+LEFT JOIN purchases_products
+ON purchases_products.product_id = products.id
+LEFT JOIN purchases
+ON purchases_products.purchase_id = purchases.id;
