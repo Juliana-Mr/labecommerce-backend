@@ -1,5 +1,6 @@
 import  express, { Request, Response} from 'express'
 import cors from 'cors'
+import { db } from './database/knex'
 import { users, products, purchase, createUser, getAllUsers, createProduct, getAllProduct, getProductById, queryProductsByName, createPurchase, getAllPurchasesFromUserId } from "./database";
 import { TProduct, TPurchase, TUser, CATEGORY } from './types';
 import { toASCII } from 'punycode';
@@ -20,11 +21,11 @@ app.get("/ping", (req: Request, res: Response) => {
   res.send("Pong!");
 })
 
-
-app.get("/users", (req:Request, res:Response) => {
+app.get("/users", async (req:Request, res:Response) => {
   try{
-  res.status(200).send(users)
-} catch (error) {
+    const result = await db.raw(`SELECT * FROM users`)
+    res.status(200).send(result)
+} catch (error: any) {
   if(res.statusCode === 200){
     res.status(500)
   }
@@ -32,64 +33,48 @@ app.get("/users", (req:Request, res:Response) => {
 }
 })
 
-app.post("/users", (req: Request, res: Response) => {
+app.post("/users", async (req: Request, res: Response) => {
 
   try {
-    const { id, email, password } = req.body
+    const id: string = Math.floor(Date.now() * Math.random()).toString(36)
+    const name: string = req.body.name
+    const email: string = req.body.email
+    const password: string = req.body.password
+   
+if(!name || typeof name !== "string"){
+  res.status(400)
+  throw new Error ("É necessário enviar um 'name' do tipo 'string'")
+}
 
-  if(!id){
-    res.status(400)
-    throw new Error (" É necessário passar uma 'id")
-  }
+if(!email || typeof email !== "string"){
+  res.status(400)
+  throw new Error ("É necessário enviar um 'email' do tipo 'string'")
+}
 
-  if(id !== undefined){
-  if(typeof id !== "string"){
-    res.status(400)
-    throw new Error ("A 'id' precisa ser do tipo 'string'")
-  }}
+if(!password || typeof password !== "string"){
+  res.status(400)
+  throw new Error ("É necessário enviar um 'password'do tipo 'string'")
+}
 
-  if(!email){
-    res.status(400)
-    throw new Error ("É necessário passar um 'email'")
-  }
+const [idExist]: {}[] = await db.raw(`SELECT * FROM users WHERE id = '${id}'`)
 
-  if(email !== undefined){
-  if(typeof email !== "string"){
-    res.status(400)
-    throw new Error ("O 'email' precisa ser do tipo 'string'")
-  }}
+if(idExist){
+  res.status(400)
+  throw new Error ("Usuário já cadastrado!")
+}
 
-  if(!password){
-    res.status(400)
-    throw new Error("É necessário passar um 'password'")
-  }
+const [emailExist]: {}[] = await db.raw(`SELECT * FROM users WHERE email ='${email}'`)
+ 
+if (emailExist){
+  res.status(400)
+  throw new Error ("Email já cadastrado")
+}
 
-  if(password !== undefined){
-  if(typeof password !== "string"){
-    res.status(400)
-    throw new Error ("O 'passaword' precisa ser do tipo 'string'")
-  }}
+const result: {}[] = await db.raw(`INSERT INTO users (id, name, email, password) 
+VALUES ('${id}', '${name}', '${email}', '${password}')`)
+res.status(201).send("Cadastro realizado com sucesso")
 
-    const userFindId = users.find( user => user.id === id)
-    if( userFindId){
-    res.status(400)
-    throw new Error ("Já existe um 'user' com esta 'id'")
-  }
-
-  const userFindEmail = users.find(user => user.email === email)
-  if( userFindEmail){
-    res.status(400)
-    throw new Error (" Já existe um 'user' com este 'email'")
-  }
-
-      const newUser: TUser = {
-      id,
-      email,
-      password
-    }
-    users.push(newUser)
-    res.status(201).send("Cadastro realizado com sucesso")
-  } catch (error) {
+} catch (error : any) {
     if(res.statusCode === 200){
       res.status(500)
     }
@@ -168,30 +153,11 @@ if(typeof newPassword!== "string"){
 }
 })
 
-app.get("/products", (req:Request, res:Response) => {
-  
+app.get("/products", async (req:Request, res:Response) => {
   try{
-    res.status(200).send(products)
-  } catch (error) {
-    if(res.statusCode === 200){
-      res.status(500)
-    }
-    res.send(error.message)
-  }
-})
-
-app.get("/products/search", (req:Request, res:Response) =>{
-  try{
-    const name = req.query.name as string
-    const result = products.filter(item => item.name.toLowerCase().includes(name.toLowerCase()))
-    
-    if(name.length < 1){
-      throw new Error ("query params deve possuir pelo menos um caractere")
-    }
-    
+    const result = await db.raw(`SELECT * FROM products`)
     res.status(200).send(result)
-  
-  } catch (error) {
+  } catch (error: any) {
     if(res.statusCode === 200){
       res.status(500)
     }
@@ -199,19 +165,41 @@ app.get("/products/search", (req:Request, res:Response) =>{
   }
 })
 
-app.get("/products/:id", (req:Request, res:Response) => {
+app.get("/products/search", async(req:Request, res:Response) =>{
+  try{
+    const name: string = req.query.name as string
+
+    if(name.length < 1){
+        throw new Error ("query params deve possuir pelo menos um caractere")
+       }
+
+    const [nameExist]:{}[] = await db.raw(`SELECT * FROM products WHERE name = '${name}'`) 
+    if(!nameExist){
+      throw new Error ("não há nenhum produto cadastrado com este nome") 
+    }
+    res.status(200).send(nameExist)
+
+  } catch (error:any) {
+    if(res.statusCode === 200){
+      res.status(500)
+    }
+    res.send(error.message)
+  }
+})
+
+app.get("/products/:id", async (req:Request, res:Response) => {
  try{
- const {id} = req.params
- const result = products.find(product => product.id === id)
+ const id = req.params.id 
  
- if(!result){
+ const [idExist]: {}[] = await db.raw(`SELECT * FROM products WHERE id = '${id}'`)
+ if (!idExist){
   res.status(400)
-  throw new Error ("Produto inexistente")
+  throw new Error ("Produto não encontrado. Verifique o 'id' enviado")
  }
  
-  res.status(200).send (["Objeto 'product' encontrado", result ])
+  res.status(200).send (idExist)
 
-} catch (error) {
+} catch (error: any) {
   if(res.statusCode === 200){
     res.status(500)
   }
@@ -219,73 +207,46 @@ app.get("/products/:id", (req:Request, res:Response) => {
 }
 })
 
-app.post("/products", (req:Request, res:Response) => {
+app.post("/products", async (req:Request, res:Response) => {
 try{
- const {id, name, price, category} = req.body
 
- if(!id){
+  const id: string = Math.floor(Date.now() * Math.random()).toString(36)
+  const name: string = req.body.name
+  const price:number = req.body.price
+  const description: string = req.body.description
+  const imageUrl: string = req. body.imageUrl
+
+if(!name || typeof name !== "string"){
   res.status(400)
-  throw new Error ("É necessário passar uma 'id'")
+  throw new Error ("É necessário enviar um 'name' do tipo 'string'")
+}
+ 
+if(!price || typeof price !== "number"){
+  res.status(400)
+  throw new Error ("É necessário enviar um 'price' do tipo 'number'")
  }
 
- if(id !== undefined){
- if(typeof id !== "string"){
+if(!description || typeof description !== "string"){
   res.status(400)
-  throw new Error("A 'id' precisa ser do tipo 'string'")
- }}
-
- if(!name){
-  res.status(400)
-  throw new Error ("É necessário passar um 'name")
- }
-
- if(name !== undefined){
- if(typeof name !== "string"){
-  res.status(400)
-  throw new Error ("O 'name' precisa ser do tipo 'string")
- }}
-
- if(!price){
-  res.status(400)
-  throw new Error ("É necessário passar um 'price'")
- }
-
- if(price !== undefined){
- if(typeof price !== "number"){
-  res.status(400)
-  throw new Error ("O 'price' precisa ser do tipo 'number'")
- }}
-
- if(!category){
-  res.status(400)
-  throw new Error ("É necessário passar uma 'category'")
- }
-
- if(category !== undefined){
- if( category !== CATEGORY.LAMBE &&
-     category !== CATEGORY.PORTACOPOS &&
-     category !== CATEGORY.QUADROS
-  ) {
-  res.status(400)
-  throw new Error ("A 'category' precisa ser do tipo válido (lambre-lambe, porta-copos ou quadros)")
- }}
-
-const productFindId = products.find(product => product.id === id)
-
-if (productFindId){
-  res.status(400)
-  throw new Error ("Já existe um produto com essa 'id' cadastrado")
+  throw new Error ("É necessário enviar uma 'description' do tipo 'string'")
 }
 
-const newProduct: TProduct ={
-  id,
-  name,
-  price,
-  category
+if(!imageUrl || typeof imageUrl !== "string"){
+  res.status(400)
+  throw new Error ("É necessário enviar uma 'imageUrl' do tipo 'string'")
 }
 
-products.push(newProduct)
+const [productsIdExist]: {}[] = await db.raw(`SELECT * FROM products WHERE id = '${id}'`)
+
+if(productsIdExist){
+  res.status(400)
+  throw new Error ("Este produto já está cadastrado")
+}
+
+const result: {}[] = await db.raw(`INSERT INTO products (id, name, price, description, imageUrl) 
+VALUES ('${id}', '${name}', '${price}', '${description}', '${imageUrl}')`)
 res.status(201).send("Produto cadastrado com sucesso")
+
 } catch (error) {
   if(res.statusCode === 200){
     res.status(500)
@@ -378,9 +339,10 @@ const {id} = req.params
 }
 })
 
-app.get("/purchases", (req:Request, res:Response) => {
+app.get("/purchases", async (req:Request, res:Response) => {
   try{
-  res.status(200).send(purchase)
+  const result = await db.raw(`SELECT * FROM purchases`)
+  res.status(200).send(result)
 } catch (error) {
   if(res.statusCode === 200){
     res.status(500)
@@ -389,84 +351,44 @@ app.get("/purchases", (req:Request, res:Response) => {
 }
 })
 
-app.post("/purchase", (req:Request, res:Response) => {
+app.post("/purchase", async (req:Request, res:Response) => {
   try{
-    const {userId,productId,quantity,totalPrice} = req.body
-    
-if(!userId){
+    const id: string = Math.floor(Date.now() * Math.random()).toString(36)
+    const buyer: string = req.body.buyer
+    const totalPrice: number = req.body.totalPrice
+    const paid: boolean = req.body.paid
+
+ if(!buyer || typeof buyer !== "string"){
   res.status(400)
-  throw new Error ("É necessário passar um valor para 'userId'")
+  throw new Error ("É necessário enviar um 'buyer' do tipo 'string'")
+ }
+
+ if(!totalPrice || typeof totalPrice !== "number"){
+  res.status(400)
+  throw new Error ("É necessário enviar um 'totalPrice' do tipo 'number'")
+ }
+
+if(!paid ||typeof paid !== "boolean" ){
+  res.status(400)
+  throw new Error ("É necessário enviar um 'paid' do tipo 'boolean'")
 }
 
-if(userId !== undefined){
-if (typeof userId !== "string"){
+const [purchaseIdExist]: {}[] = await db.raw (`SELECT * FROM purchases WHERE id = '${id}'`)
+if(purchaseIdExist){
   res.status(400)
-  throw new Error ("O 'userId' precisa ser do tipo string")
-}}
-
-if(!productId){
-  res.status(400)
-  throw new Error ("É necesssário passar um valor para 'productId'")
+  throw new Error ("Está compra já está cadastrada")
 }
 
-if(productId !== undefined){
-if(typeof productId !== "string"){
+const [buyerIdExist]: {}[] = await db.raw(`SELECT * FROM users WHERE id = '${buyer}'`)
+if(!buyerIdExist){
   res.status(400)
-  throw new Error ("O 'productId' precisa ser do tipo string")
-}}
-
-if(!quantity){
-  res.status(400)
-  throw new Error ("É necessário passar um valor para 'quantity'")
+  throw new Error ("'buyer' deve ser igual ao 'id' de algum usuário cadastrado")
 }
 
-if(quantity !== undefined){
-if(typeof quantity !== "number"){
-  res.status(400)
-  throw new Error ("A 'quantity' precisa ser do tipo number")
-}}
 
-if(!totalPrice){
-  res.status(400)
-  throw new Error ("É necessário passar um valor para 'totalPrice'")
-}
-
-if(totalPrice !== undefined){
-if(typeof totalPrice !== "number"){
-  res.status(400)
-  throw new Error ("O 'totalPrice' deve ser do tipo number")
-}}
-
-const IdUsuarioFind = users.find(user => user.id === userId)
-
-if(!IdUsuarioFind){
-  res.status(400)
-  throw new Error ("O 'userId' deve existir no array 'users'")
-}
-
-const idProductFind = products.find(product => product.id === productId)
-
-if(!idProductFind){
-  res.status(400)
-  throw new Error ("O 'produductId' deve existir no array 'products'")
-}
-
-  const total = quantity * idProductFind.price
-
-  if (total !== totalPrice){
-    res.status(400)
-    throw new Error("O 'totalPrice' deve corresponder ao 'price' vezes a 'quantity'")
-  }
-
-const newPurhase: TPurchase = {
-    userId,
-    productId,
-    quantity,
-    totalPrice
-}
-
-purchase.push(newPurhase)
-res.status(201).send("Compra realizada com sucesso")
+const result: {}[] = await db.raw(`INSERT INTO purchases (id, buyer, totalPrice, paid) 
+VALUES ('${id}', '${buyer}', '${totalPrice}', '${paid}')`)
+res.status(201).send("Compra cadastrada com sucesso")
 
 } catch (error) {
   if(res.statusCode === 200){
@@ -476,22 +398,23 @@ res.status(201).send("Compra realizada com sucesso")
 }
 })
 
-app.get("/users/:id/purchases", (req:Request, res: Response) => {
+app.get("/users/:id/purchases",async (req:Request, res: Response) => {
  try{
-const {id} = req.params
-const result = purchase.find(item => item.userId === id)
+const id = req.params.id
 
-if (!result){
+const [userIdExist]: {}[] = await db.raw(`SELECT * FROM purchases WHERE buyer = '${id}'`)
+if (!userIdExist){
   res.status(400)
-  throw new Error ("usuário inexistente")
+  throw new Error ("'id' não encontrado na tabela. Verifique o 'id' enviado")
 }
-res.status(200).send(result)
+res.status(200).send(userIdExist)
 
-} catch (error) {
+} catch (error: any) {
   if(res.statusCode === 200){
     res.status(500)
   }
   res.send(error.message)
 }
 })
+
 
