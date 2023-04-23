@@ -4,6 +4,7 @@ import { db } from './database/knex'
 import { users, products, purchase, createUser, getAllUsers, createProduct, getAllProduct, getProductById, queryProductsByName, createPurchase, getAllPurchasesFromUserId } from "./database";
 import { TProduct, TPurchase, TUser, CATEGORY } from './types';
 import { toASCII } from 'punycode';
+import { describe } from 'node:test';
 
 // console.log(createPurchase("1", "1", 2, 600) )
 // console.log(getAllPurchasesFromUserId("1"))
@@ -82,21 +83,21 @@ res.status(201).send("Cadastro realizado com sucesso")
   }
 })
 
-app.delete("/users/:id", (req: Request, res: Response) => {
+app.delete("/users/:id", async (req: Request, res: Response): Promise<void> => {
  try{
-  const {id} = req.params
-  const userIdFind = users.find(item => item.id === id)
+  const id: string = req.params.id
+  const [userExist]:{}[] = await db("users").where({id}) 
 
-  if(!userIdFind){
-    res.status(404)
-    throw new Error ("Usuário inexistente. Verifique o 'id'")
+  if(!userExist){
+    res.status(400)
+    throw new Error ("Usuário não encontrado. É necessário enviar um 'id' válido.")
   }
 
-  const result = users.findIndex(item => item.id === id)
-  users.splice(result, 1)
-  res.status(200).send("Usuário apagado com sucesso")
-  
- } catch (error) {
+  await db("users").del().where({id})
+  res.status(200).send("Usuário excluído com sucesso")
+ 
+
+ } catch (error: any) {
   if(res.statusCode === 200){
     res.status(500)
   }
@@ -104,25 +105,18 @@ app.delete("/users/:id", (req: Request, res: Response) => {
 }
 })
   
-app.put("/users/:id", (req:Request, res: Response) => {
+app.put("/users/:id", async (req:Request, res: Response): Promise<void> => {
 try{
-  const {id} = req.params
+  const idToEdit: string = req.params.id
 
-  const newId = req.body.id
-  const newEmail = req.body.email
-  const newPassword = req.body.password
+  const newName: string = req.body.name
+  const newEmail: string = req.body.email
+  const newPassword: string = req.body.password
 
-  const userFind = users.find( user => user.id === id)
-
-if(!userFind){
-  res.status(404)
-  throw new Error ("Usuário inexistente. Verifique o 'id'")
-  }
-
-  if(newId !== undefined){
-  if(typeof newId !== "string"){
+  if(newName !== undefined){
+  if(typeof newName !== "string"){
   res.status(400)
-  throw new Error ("O 'id' precisa ser uma string")
+  throw new Error ("O 'name' precisa ser uma string")
 }}
 
 if(newEmail !== undefined){
@@ -138,14 +132,29 @@ if(typeof newPassword!== "string"){
 }
 }
 
-  if (userFind){
-    userFind.id = newId || userFind.id
-    userFind.email = newEmail || userFind.email
-    userFind.password = newPassword || userFind.password
-  }
+type User = {
+  name: string,
+  email: string,
+  password: string
+}
 
-  res.status(200).send("Cadastro atualizado com sucesso")
-} catch (error) {
+const [user]:User[] = await db("users").where({id:idToEdit})
+
+if(user){
+  const newInfo: User = {
+    name: newName || user.name,
+    email: newEmail || user.email,
+    password: newPassword || user.password
+  }
+  await db("users").update(newInfo).where({id:idToEdit})
+} else {
+  res.status (404)
+  throw new Error ("Usuário não encontrado. Verifique o 'id'.")
+}
+
+res.status(200).send("Usuário atualizado com sucesso.")
+
+} catch (error: any) {
   if(res.statusCode === 200){
     res.status(500)
   }
@@ -255,21 +264,21 @@ res.status(201).send("Produto cadastrado com sucesso")
 }
 })
 
-app.delete("/products/:id", (req:Request, res:Response) => {
+app.delete("/products/:id", async (req:Request, res:Response): Promise<void> => {
  try{
-  const {id} = req.params
-  const productIdFind = products.find(product => product.id === id)
+  const id: string = req.params.id
+  const [productIdExist]:{}[] = await db("products").where({id})
 
-  if(!productIdFind){
-    res.status(404)
-    throw new Error ("Produto inexistente. Verifique o 'id'")
+  if(!productIdExist){
+    res.status(400)
+    throw new Error ("Produto não encontrado. É necessário enviar um 'id' válido")
   }
- 
-  const result = products.findIndex(product => product.id === id)
-  products.splice(result, 1)
-  res.status(200).send("Produto apagado com sucesso")
 
-}catch (error){
+  await db("products").del().where({id})
+  res.status(200).send("Produto excluído com sucesso.")
+
+
+}catch (error: any){
   if(res.statusCode === 200){
     res.status(500)
   }
@@ -277,27 +286,15 @@ app.delete("/products/:id", (req:Request, res:Response) => {
 }
 })
 
-app.put("/products/:id", (req:Request, res:Response) => {
+app.put("/products/:id",async (req:Request, res:Response): Promise<void> => {
   try{
-const {id} = req.params
+const idToEdit: string = req.params.id
 
-  const newId = req.body.id
-  const newName = req.body.name
-  const newPrice = req.body.price
-  const newCategory = req.body.category
+  const newName: string = req.body.name
+  const newPrice: number = req.body.price
+  const newDescription: string = req.body.description
+  const newImageUrl: string = req.body.imageUrl
 
-  const productFind = products.find(product => product.id === id)
-
-  if(!productFind){
-    res.status(404)
-      throw new Error ("Produto inexistente. Verifique o 'id'")
-  }
-  
-  if(newId !== undefined){
-  if(typeof newId !== "string"){
-    res.status(400)
-    throw new Error ("O 'id' deve ser do tipo 'string'")
-  }}
 
   if(newName !== undefined){
   if(typeof newName !== "string"){
@@ -311,26 +308,43 @@ const {id} = req.params
     throw new Error ("O 'price' deve ser do tipo 'number'")
   }}
 
-  if(newCategory !== undefined){
-  if(newCategory !== undefined){
-    if(
-        newCategory!== CATEGORY.LAMBE &&
-        newCategory!== CATEGORY.PORTACOPOS &&
-        newCategory!== CATEGORY.QUADROS
-    ){
-        res.status(400)
-        throw new Error("'category' deve ser um tipo válido.lambe-lambe, porta-copos ou quadros")
+  if(newDescription !== undefined){
+    if(typeof newDescription !== "string"){
+      res.status(400)
+      throw new Error ("O 'description' deve ser do tipo 'string'")
     }}
-  }
 
-  if(productFind){
-    productFind.id = newId || productFind.id
-    productFind.name = newName || productFind.name
-    productFind.price = newPrice || productFind.price
-    productFind.category = newCategory || productFind.category
-  }
+  if(newImageUrl !== undefined){
+    if(typeof newImageUrl !== "string"){
+      res.status(400)
+      throw new Error ("'imageUrl' deve ser do tipo 'string'")
+     }} 
+  
 
-  res.status(200).send("Produto atualizado com sucesso")
+  type Products = {
+    name: string,
+    price: number,
+    description: string,
+    imageUrl: string
+  }
+  
+const [product]: Products[] = await db("products").where({id:idToEdit})
+  
+if(product){
+  const newInfo: Products = {
+    name: newName || product.name,
+    price: newPrice || product.price,
+    description: newDescription || product.description,
+    imageUrl: newImageUrl || product.imageUrl
+  }
+  await db("products").update(newInfo).where({id:idToEdit})
+}else {
+  res.status (404)
+  throw new Error ("Produto não encontrado. Verifique o 'id'.")
+}
+
+res.status(200).send("Produto atualizado com sucesso.")
+  
 } catch (error) {
   if(res.statusCode === 200){
     res.status(500)
